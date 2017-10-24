@@ -115,8 +115,3 @@ def act_fetch_new(api_engine, act_df, until=datetime.datetime.now()):
         df = df.append(new_df)
     act_df = act_df.append(df)
     return act_df, df
-
-
-# TODO: create functions to save the full fetch dataframe to my online RDS
-
-# TODO: create functions to insert newly fecthed data to my online RDS
