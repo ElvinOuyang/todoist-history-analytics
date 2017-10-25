@@ -1,6 +1,19 @@
 import pandas as pd
+from todoist.api import TodoistAPI
+import os
+import sys
 import numpy as np
 import datetime
+
+
+def create_api():
+    try:
+        token = os.environ['TODOIST_TOKEN']
+    except KeyError:
+        sys.stderr.write("TODOIST_* environment variable not set\n")
+        sys.exit(1)
+    api = TodoistAPI(token)
+    return api
 
 
 def transform_act(act_dict):
@@ -52,7 +65,7 @@ def df_standardization(df):
     return df
 
 
-def act_fetch_all(api_engine, until=datetime.datetime.now()):
+def act_fetch_all(until=datetime.datetime.now()):
     """
     Function to Download All Activity History as Todoist Activity
     -----INPUT-----
@@ -65,6 +78,7 @@ def act_fetch_all(api_engine, until=datetime.datetime.now()):
     transform_act(): transforms dictionary to Pandas DataFrame
     df_standardization(): standardizes Pandas DataFrame
     """
+    api_engine = create_api()
     until_param = until.strftime('%Y-%m-%dT%H:%M:%S')
     act_df = df_standardization(transform_act(
         api_engine.activity.get(limit=100, until=until_param)))
@@ -83,7 +97,7 @@ def act_fetch_all(api_engine, until=datetime.datetime.now()):
     return act_df
 
 
-def act_fetch_new(api_engine, act_df, until=datetime.datetime.now()):
+def act_fetch_new(act_df, until=datetime.datetime.now()):
     """
     Function to Update Activity History as Todoist Activity
     -----INPUT-----
@@ -98,6 +112,7 @@ def act_fetch_new(api_engine, act_df, until=datetime.datetime.now()):
     transform_act(): transforms dictionary to Pandas DataFrame
     df_standardization(): standardizes Pandas DataFrame
     """
+    api_engine = create_api()
     since = act_df.event_date.max()
     since_param = since.strftime('%Y-%m-%dT%H:%M:%S')
     until_param = until.strftime('%Y-%m-%dT%H:%M:%S')
