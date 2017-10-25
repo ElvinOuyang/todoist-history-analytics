@@ -19,10 +19,9 @@ if __name__ == '__main__':
         ))
     sqlfun.overwrite_table_mysql(full_df, 'activity_history')
 
-# TODO: change the update since date method by using SQL query and get the
-# latest event date from the MySQL table
-    full_df = sqlfun.create_full_activity()
-    update_df = todofun.act_fetch_new(full_df)
+    # update an existing activity_history MySQL Table
+    since_date = sqlfun.get_latest_eventdate()
+    update_df = todofun.act_fetch_new(since=since_date)
     print('>>> update_df is created with shape {}'.format(update_df.shape))
     print('>>> the update history ranges from {} to {}'.format(
         update_df.event_date.min().strftime('%Y-%m-%d'),

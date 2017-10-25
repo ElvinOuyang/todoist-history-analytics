@@ -97,12 +97,11 @@ def act_fetch_all(until=datetime.datetime.now()):
     return act_df
 
 
-def act_fetch_new(act_df, until=datetime.datetime.now()):
+def act_fetch_new(since, until=datetime.datetime.now()):
     """
     Function to Update Activity History as Todoist Activity
     -----INPUT-----
-    api_engine: a TodoistAPI(token) object that connects to Todoist API
-    act_df: the previously loaded standardized Pandas DataFrame
+    since: datetime object of the latest event_date from loaded records
     until: a datetime.datetime object that signifies the latest time the
     user wants to fetch the history. Defaults to the time of the excution.
     -----OUTPUT-----
@@ -113,7 +112,6 @@ def act_fetch_new(act_df, until=datetime.datetime.now()):
     df_standardization(): standardizes Pandas DataFrame
     """
     api_engine = create_api()
-    since = act_df.event_date.max()
     since_param = since.strftime('%Y-%m-%dT%H:%M:%S')
     until_param = until.strftime('%Y-%m-%dT%H:%M:%S')
     df = df_standardization(transform_act(
@@ -121,12 +119,11 @@ def act_fetch_new(act_df, until=datetime.datetime.now()):
                                 until=until_param)))
     new_len = len(df)
     while new_len == 100:
-        since = act_df.event_date.max() + datetime.timedelta(seconds=1)
+        since = df.event_date.max() + datetime.timedelta(seconds=1)
         since_param = since.strftime('%Y-%m-%dT%H:%M:%S')
         new_df = df_standardization(transform_act(
             api_engine.activity.get(limit=100, since=since_param,
                                     until=until_param)))
         new_len = len(new_df)
         df = df.append(new_df)
-    act_df = act_df.append(df)
-    return act_df, df
+    return df

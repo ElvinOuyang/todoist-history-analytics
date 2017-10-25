@@ -1,8 +1,8 @@
-import sqlalchemy
 import os
 import sys
 import pandas as pd
 import todoist_functions as todofun
+from sqlalchemy import create_engine, select, func, Table, MetaData
 
 
 def connect_mysql():
@@ -24,14 +24,19 @@ A SQLAlchemy engine with connections to MySQL database
     except KeyError:
         sys.stderr.write("MYSQL_* environment variable not set\n")
         sys.exit(1)
-    conn = sqlalchemy.create_engine(
+    conn = create_engine(
         'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8'.format(
             user,
             password,
             host,
             port,
             db), encoding='utf-8')
-    return conn
+    metadata = MetaData(conn)
+    activity_history = Table('activity_history',
+                             metadata,
+                             autoload=True,
+                             autoload_with=conn)
+    return conn, activity_history
 
 
 def overwrite_table_mysql(df, table_name):
@@ -43,7 +48,7 @@ table_name: the destination table name in the MySQL database
 -----OUTPUT-----
 none. the action was taken to upload data to MySQL database
     """
-    conn = connect_mysql()
+    conn = connect_mysql()[0]
     df.to_sql(name=table_name, con=conn,
               if_exists='replace', index=False)
 
@@ -57,7 +62,7 @@ table_name: the destination table name in the MySQL database
 -----OUTPUT-----
 none. the action was taken to upload data to MySQL database
     """
-    conn = connect_mysql()
+    conn = connect_mysql()[0]
     df.to_sql(name=table_name, con=conn,
               if_exists='append', index=False)
 
@@ -70,7 +75,14 @@ table_name: the table name of the full activity history table in MySQL database
 -----OUTPUT-----
 df: the standardized pandas dataframe of activity history
     """
-    conn = connect_mysql()
+    conn = connect_mysql()[0]
     df = pd.read_sql(table_name, conn)
     df = todofun.df_standardization(df)
     return df
+
+
+def get_latest_eventdate():
+    conn, activity_history = connect_mysql()
+    stmt = select([func.max(activity_history.columns.event_date)])
+    since_date = conn.connect().execute(stmt).fetchone()[0]
+    return since_date
